@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 2.8)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake_modules/")
+message(${CMAKE_SOURCE_DIR})
+message(${CMAKE_MODULE_PATH})
+
+project(cairo-sample)
+add_executable(cairo-sample cairo2.c)
+include(FindCairo)
+include(FindGTK)
+if(CAIRO_FOUND AND GTK_FOUND)
+	include_directories(${CAIRO_INCLUDE_DIRS} ${GTK_INCLUDE_DIR})
+	target_link_libraries(cairo-sample ${CAIRO_LIBRARY_DIRS} ${GTK_LIBRARY})
+else(CAIRO_FOUND AND GTK_FOUND)
+	message("cairo not found")
+endif(CAIRO_FOUND AND GTK_FOUND)
