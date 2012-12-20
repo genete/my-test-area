@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <cairo.h>
 #include <gtk/gtk.h>
 
@@ -12,28 +13,38 @@ on_expose_event(GtkWidget *widget,
     GdkEventExpose *event,
     gpointer data)
 {
-  cairo_t *cr;
+	cairo_t *cr;
+	
+	cr = gdk_cairo_create(widget->window);
+	
+	cairo_save(cr);
+	cairo_set_source_rgb(cr, 0, 0, 0);
+	cairo_set_line_width (cr, 0.5);
+	cairo_set_antialias(cr, CAIRO_ANTIALIAS_SUBPIXEL);
+	
+	int i, j;
+	for ( i = 0; i <= count - 1; i++ ) {
+		for ( j  = 0; j <= count -1; j++ ) {
+			cairo_move_to(cr, coordx[i], coordy[i]);
+			cairo_line_to(cr, coordx[j], coordy[j]);
+		}
+	}
+	cairo_stroke(cr);
+	cairo_restore(cr);
 
-  cr = gdk_cairo_create(widget->window);
+	cairo_set_source_rgb(cr, 0.9, 0, 0);
+	cairo_move_to(cr, 10, 10);
+	GtkWindow *w=GTK_WINDOW(widget);
+	gint x, y;
+	gtk_window_get_position(w, &x, &y);
+	char buff[60];
+	sprintf(buff,"x=%d; y=%d", x, y);
+	cairo_show_text(cr, buff);
+	cairo_destroy(cr);
 
-  cairo_set_source_rgb(cr, 0, 0, 0);
-  cairo_set_line_width (cr, 0.5);
-  cairo_set_antialias(cr, CAIRO_ANTIALIAS_BEST);
-
-  int i, j;
-  for ( i = 0; i <= count - 1; i++ ) {
-      for ( j  = 0; j <= count -1; j++ ) {
-          cairo_move_to(cr, coordx[i], coordy[i]);
-          cairo_line_to(cr, coordx[j], coordy[j]);
-      }
-  }
-
-  //count = 0;
-  if(count > 99) count=0;
-  cairo_stroke(cr);
-  cairo_destroy(cr);
-
-  return FALSE;
+	if(count > 99) count=0;
+	
+	return FALSE;
 }
 
 gboolean clicked(GtkWidget *widget, GdkEventButton *event,
