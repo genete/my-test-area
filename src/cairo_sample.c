@@ -151,7 +151,7 @@ int main (int argc, char *argv[])
   g_signal_connect(window, "button-press-event", 
       G_CALLBACK(clicked), NULL);
   g_signal_connect(window, "configure-event",
-					 G_CALLBACK(on_configure_event), NULL);
+	  G_CALLBACK(on_configure_event), NULL);
 
   gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
   gtk_window_set_title(GTK_WINDOW(window), "linese");
