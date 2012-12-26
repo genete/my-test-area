@@ -71,7 +71,7 @@ on_expose_event(GtkWidget *widget,
 	/*Drawing stuff*/
 	cairo_save(cr);
 	cairo_reset_clip(cr);
-	cairo_set_source_rgb(cr, 0.8, 0.8, 0.8);
+	cairo_set_source_rgb(cr, 0.4, 0.8, 0.8);
 	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
 	cairo_paint(cr);
 	cairo_set_source_rgb(cr, 0, 0, 0);
@@ -97,6 +97,7 @@ on_expose_event(GtkWidget *widget,
 	cairo_gl_surface_swapbuffers (window_surface);
 	
 	cairo_device_destroy(ctx);
+	cairo_surface_destroy(window_surface);
 	if(count > 99) count=0;
 	
 	rendering=FALSE;
