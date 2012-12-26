@@ -159,6 +159,7 @@ int main (int argc, char *argv[])
   gtk_window_set_title(GTK_WINDOW(window), "linese");
   gtk_window_set_default_size(GTK_WINDOW(window), 400, 300); 
   gtk_widget_set_app_paintable(window, TRUE);
+  gtk_widget_set_double_buffered(window, FALSE);
   gtk_widget_show_all(window);
 
   gtk_main();
