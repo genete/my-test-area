@@ -8,8 +8,8 @@ include_directories(${GTK2_INCLUDE_DIRS})
 link_directories(${GTK2_LIBRARY_DIRS})
 add_definitions(${GTK2_CFLAGS_OTHER})
 
-set(CAIRO_INCLUDE_DIRS "/Users/carlos/Software/Cairo-install2/include/cairo")
-set(CAIRO_LIBRARY_DIRS "/Users/carlos/Software/Cairo-install2/lib")
+set(CAIRO_INCLUDE_DIRS "/Users/carlos/Software/cairo/include/cairo")
+set(CAIRO_LIBRARY_DIRS "/Users/carlos/Software/cairo/lib")
 set(CAIRO_LIBRARIES cairo gl)
 
 include_directories(BEFORE ${CAIRO_INCLUDE_DIRS})
