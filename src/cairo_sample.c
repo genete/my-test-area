@@ -14,7 +14,7 @@ int count = 0;
 char buff[60];
 
 gboolean rendering=FALSE;
-
+static cairo_surface_t* window_surface=NULL;
 
 static cairo_device_t *
 cairo_sample_gl_context_create(Display *dpy, GLXContext *out_gl_ctx)
@@ -58,7 +58,6 @@ on_expose_event(GtkWidget *widget,
 	
 	cairo_t *cr;
 	GLXContext gl_ctx;
-	cairo_surface_t* window_surface;
 	cairo_device_t *ctx = NULL;
 	/* Create a cairo_device for the Display and gl context*/
 	ctx=cairo_sample_gl_context_create(GDK_WINDOW_XDISPLAY(gtk_widget_get_window(widget)), &gl_ctx);
@@ -92,9 +91,7 @@ on_expose_event(GtkWidget *widget,
 	cairo_gl_surface_swapbuffers (window_surface);
 	
 	cairo_destroy(cr);
-	cairo_surface_destroy(window_surface);
-	cairo_gl_context_destroy(ctx);
-
+	cairo_device_destroy(ctx);
 	if(count > 99) count=0;
 	
 	rendering=FALSE;
