@@ -58,13 +58,16 @@ on_expose_event(GtkWidget *widget,
 	
 	cairo_t *cr;
 	GLXContext gl_ctx;
-	
 	cairo_surface_t* window_surface;
 	cairo_device_t *ctx = NULL;
+	/* Create a cairo_device for the Display and gl context*/
 	ctx=cairo_sample_gl_context_create(GDK_WINDOW_XDISPLAY(gtk_widget_get_window(widget)), &gl_ctx);
+	/*Create a surface for the window*/
 	window_surface=cairo_gl_surface_create_for_window(ctx, GDK_WINDOW_XID(gtk_widget_get_window(widget)), 480, 480);
+	/*Create the cairo context*/
 	cr = cairo_create(window_surface);
 	
+	/*Drawing stuff*/
 	cairo_save(cr);
 	cairo_reset_clip(cr);
 	cairo_set_source_rgb(cr, 0, 0, 0);
@@ -84,7 +87,13 @@ on_expose_event(GtkWidget *widget,
 	cairo_set_source_rgb(cr, 0.9, 0, 0);
 	cairo_move_to(cr, 10, 10);
 	cairo_show_text(cr, buff);
+	
+	/*Transfer drawings to screen*/
+	cairo_gl_surface_swapbuffers (window_surface);
+	
 	cairo_destroy(cr);
+	cairo_surface_destroy(window_surface);
+	cairo_gl_context_destroy(ctx);
 
 	if(count > 99) count=0;
 	
