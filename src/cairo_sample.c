@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <cairo.h>
 #include <cairo-gl.h>
 #include <gtk/gtk.h>
@@ -44,6 +45,85 @@ cairo_sample_gl_context_create(Display *dpy, GLXContext *out_gl_ctx)
     ctx = cairo_glx_device_create (dpy, gl_ctx);
 	
     return ctx;
+}
+
+struct closure {
+    Display *dpy;
+    GLXContext ctx;
+};
+
+
+static void
+cleanup (void *data)
+{
+    struct closure *arg = data;
+	
+    glXDestroyContext (arg->dpy, arg->ctx);
+    XCloseDisplay (arg->dpy);
+	
+    free(arg);
+}
+
+
+static cairo_surface_t*
+create_source_surface_for_widget(GtkWidget* widget)
+{
+
+	int width, height;
+    int rgba_attribs[] = {
+		GLX_RGBA,
+		GLX_RED_SIZE, 1,
+		GLX_GREEN_SIZE, 1,
+		GLX_BLUE_SIZE, 1,
+		GLX_ALPHA_SIZE, 1,
+		GLX_DOUBLEBUFFER,
+		None };
+
+    XVisualInfo *visinfo;
+    GLXContext ctx;
+    struct closure *arg;
+    cairo_device_t *device;
+    cairo_surface_t *surface;
+    Display *dpy;
+	
+	dpy = GDK_WINDOW_XDISPLAY(gtk_widget_get_window(widget));
+	
+    if (dpy == NULL)
+		return NULL;
+    visinfo = glXChooseVisual (dpy, DefaultScreen (dpy), rgba_attribs);
+    if (visinfo == NULL) {
+		XCloseDisplay (dpy);
+		return NULL;
+    }
+    ctx = glXCreateContext (dpy, visinfo, NULL, True);
+    XFree (visinfo);
+	
+    if (ctx == NULL) {
+		XCloseDisplay (dpy);
+		return NULL;
+    }
+    arg = (struct closure*)(malloc (sizeof (struct closure)));
+    arg->dpy = dpy;
+    arg->ctx = ctx;
+    device = cairo_glx_device_create (dpy, ctx);
+    if (cairo_device_set_user_data (device,
+									(cairo_user_data_key_t *) cleanup,
+									arg,
+									cleanup))
+    {
+		cleanup (arg);
+		return NULL;
+    }
+	
+	gtk_window_get_size(GTK_WINDOW(widget), &width, &height);
+
+    surface = cairo_gl_surface_create (device,
+									   CAIRO_CONTENT_COLOR_ALPHA,
+									   width, height);
+    cairo_device_destroy (device);
+	
+    return surface;
+
 }
 
 
