@@ -35,10 +35,9 @@ cleanup (void *data)
 
 
 static cairo_surface_t*
-create_source_surface_for_widget(GtkWidget* widget)
+create_source_surface(int width, int height)
 {
 
-	int width, height;
     int rgba_attribs[] = {
 		GLX_RGBA,
 		GLX_RED_SIZE, 1,
@@ -55,10 +54,10 @@ create_source_surface_for_widget(GtkWidget* widget)
     cairo_surface_t *surface;
     Display *dpy;
 	
-	dpy = GDK_WINDOW_XDISPLAY(gtk_widget_get_window(widget));
-	
+	dpy = XOpenDisplay(NULL);
     if (dpy == NULL)
 		return NULL;
+		
     visinfo = glXChooseVisual (dpy, DefaultScreen (dpy), rgba_attribs);
     if (visinfo == NULL) {
 		XCloseDisplay (dpy);
@@ -84,10 +83,9 @@ create_source_surface_for_widget(GtkWidget* widget)
 		return NULL;
     }
 	
-	gtk_window_get_size(GTK_WINDOW(widget), &width, &height);
 
-    surface = cairo_gl_surface_create_for_window (device,
-									   GDK_WINDOW_XID(gtk_widget_get_window(widget)),
+    surface = cairo_gl_surface_create (device,
+									   CAIRO_CONTENT_COLOR_ALPHA,
 									   width, height);
     cairo_device_destroy (device);
 	
@@ -114,7 +112,7 @@ on_expose_event(GtkWidget *widget,
 		
 	gdk_drawable_get_size(pixmap, &width, &height);
 	//create a gtk-independant surface to draw on
-    cairo_surface_t *cst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+    cairo_surface_t *cst = create_source_surface(width, height);
     cairo_t *cr = cairo_create(cst);
 
 	//cr = cairo_create(window_surface);
