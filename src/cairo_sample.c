@@ -7,6 +7,11 @@
 #include <X11/Xutil.h>
 #include <gdk/gdkx.h>
 
+#include <unistd.h>
+#include <pthread.h>
+
+//the global pixmap that will serve as our buffer
+static GdkPixmap *pixmap = NULL;
 
 static gboolean rendering=FALSE;
 cairo_surface_t* window_surface=NULL;
@@ -91,17 +96,28 @@ create_source_surface_for_widget(GtkWidget* widget)
 }
 
 
+void do_draw()
+{
+
+}
+
 static gboolean
 on_expose_event(GtkWidget *widget,
     GdkEventExpose *event,
     gpointer data)
 {
+    int width, height;
+	
 	if(rendering)
 		return TRUE;
 	rendering=TRUE;
-	cairo_t *cr;
+		
+	gdk_drawable_get_size(pixmap, &width, &height);
+	//create a gtk-independant surface to draw on
+    cairo_surface_t *cst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+    cairo_t *cr = cairo_create(cst);
 
-	cr = cairo_create(window_surface);
+	//cr = cairo_create(window_surface);
 	cairo_status_t status;
 	status=cairo_status(cr);
 	if(status)
@@ -126,15 +142,28 @@ on_expose_event(GtkWidget *widget,
 	cairo_line_to(cr, 110, 20);
 	cairo_stroke(cr);
 	cairo_restore(cr);
+	cairo_destroy(cr);
 	
+	cairo_t *cr_pixmap = gdk_cairo_create(pixmap);
+    cairo_set_source_surface (cr_pixmap, cst, 0, 0);
+    cairo_paint(cr_pixmap);
+    cairo_destroy(cr_pixmap);
+	
+	gdk_draw_drawable(widget->window,
+					  widget->style->fg_gc[GTK_WIDGET_STATE(widget)], pixmap,
+					  // Only copy the area that was exposed.
+					  event->area.x, event->area.y,
+					  event->area.x, event->area.y,
+					  event->area.width, event->area.height);
+
+	rendering=FALSE;
+    return TRUE;
 	
 	/*Transfer drawings to screen*/
-	cairo_gl_surface_swapbuffers (window_surface);
+	//cairo_gl_surface_swapbuffers (window_surface);
 	
-	cairo_destroy(cr);
-	rendering=FALSE;
 	
-	return FALSE;
+//	return FALSE;
 }
 
 void on_destroy()
@@ -145,14 +174,27 @@ void on_destroy()
 
 
 gboolean
-on_configure_event(GtkWidget *w, GdkEvent *event, gpointer data)
+on_configure_event(GtkWidget *w, GdkEventConfigure *event, gpointer data)
 {
-	gint x, y;
-	x = event->configure.width;
-	y = event->configure.height;
-	cairo_gl_surface_set_size(window_surface, x, y);
-	gtk_widget_queue_draw(w);
-	return FALSE;
+    static int oldw = 0;
+    static int oldh = 0;
+    //make our selves a properly sized pixmap if our window has been resized
+    if (oldw != event->width || oldh != event->height){
+        //create our new pixmap with the correct size.
+        GdkPixmap *tmppixmap = gdk_pixmap_new(w->window, event->width,  event->height, -1);
+        //copy the contents of the old pixmap to the new pixmap.  This keeps ugly uninitialized
+        //pixmaps from being painted upon resize
+        int minw = oldw, minh = oldh;
+        if( event->width < minw ){ minw =  event->width; }
+        if( event->height < minh ){ minh =  event->height; }
+        gdk_draw_drawable(tmppixmap, w->style->fg_gc[GTK_WIDGET_STATE(w)], pixmap, 0, 0, 0, 0, minw, minh);
+        //we're done with our old pixmap, so we can get rid of it and replace it with our properly-sized one.
+        g_object_unref(pixmap);
+        pixmap = tmppixmap;
+    }
+    oldw = event->width;
+    oldh = event->height;
+    return TRUE;
 }
 
 int main (int argc, char *argv[])
@@ -175,11 +217,13 @@ int main (int argc, char *argv[])
   gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
   gtk_window_set_title(GTK_WINDOW(window), "cairo_gl");
   gtk_window_set_default_size(GTK_WINDOW(window), 400, 300); 
-  //gtk_widget_set_app_paintable(window, TRUE);
+  gtk_widget_set_app_paintable(window, TRUE);
   gtk_widget_set_double_buffered(window, FALSE);
   gtk_widget_show_all(window);
 
-  window_surface=create_source_surface_for_widget(window);
+  pixmap = gdk_pixmap_new(window->window,400,300,-1);
+  
+  //window_surface=create_source_surface_for_widget(window);
 
   gtk_main();
 
