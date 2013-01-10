@@ -19,7 +19,6 @@ struct closure {
     GLXContext ctx;
 };
 
-
 static void
 cleanup (void *data)
 {
@@ -73,10 +72,7 @@ create_source_surface_for_widget(GtkWidget* widget)
     arg->dpy = dpy;
     arg->ctx = ctx;
     device = cairo_glx_device_create (dpy, ctx);
-    if (cairo_device_set_user_data (device,
-									(cairo_user_data_key_t *) cleanup,
-									arg,
-									cleanup))
+    if (cairo_device_set_user_data (device, (cairo_user_data_key_t *) cleanup, arg, cleanup))
     {
 		cleanup (arg);
 		return NULL;
@@ -84,9 +80,7 @@ create_source_surface_for_widget(GtkWidget* widget)
 	
 	gtk_window_get_size(GTK_WINDOW(widget), &width, &height);
 
-    surface = cairo_gl_surface_create_for_window (device,
-									   GDK_WINDOW_XID(gtk_widget_get_window(widget)),
-									   width, height);
+    surface = cairo_gl_surface_create_for_window (device, GDK_WINDOW_XID(gtk_widget_get_window(widget)), width, height);
     cairo_device_destroy (device);
 	
     return surface;
@@ -99,7 +93,6 @@ void *do_draw(void *ptr){
     rendering=TRUE;
 	
     cairo_t *cr = cairo_create(window_surface);
-	
 	if(cairo_status(cr))
 		return NULL;
 	
