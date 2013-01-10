@@ -7,9 +7,12 @@
 #include <X11/Xutil.h>
 #include <gdk/gdkx.h>
 
+#include <unistd.h>
+#include <pthread.h>
+
 
 static gboolean rendering=FALSE;
-static cairo_surface_t* window_surface=NULL;
+cairo_surface_t* window_surface=NULL;
 
 struct closure {
     Display *dpy;
@@ -91,95 +94,93 @@ create_source_surface_for_widget(GtkWidget* widget)
 }
 
 
-static gboolean
-on_expose_event(GtkWidget *widget,
-    GdkEventExpose *event,
-    gpointer data)
-{
-	if(rendering)
-		return TRUE;
-	rendering=TRUE;
-	cairo_t *cr;
+void *do_draw(void *ptr){
+	
+    rendering=TRUE;
+	
+    cairo_t *cr = cairo_create(window_surface);
+	
+	if(cairo_status(cr))
+		return NULL;
+	
+    //do some time-consuming drawing
+    static int i = 0;
+    ++i; i = i % 300;   //give a little movement to our animation
+    cairo_set_source_rgb (cr, .9, .2, .9);
+    cairo_paint(cr);
+    int j,k;
+    for(k=0; k<100; ++k){   //lets just redraw lots of times to use a lot of proc power
+        for(j=0; j < 1000; ++j){
+            cairo_set_source_rgb (cr, (double)j/1000.0, (double)j/1000.0, 1.0 - (double)j/1000.0);
+            cairo_move_to(cr, i,j/2);
+            cairo_line_to(cr, i+100,j/2);
+            cairo_stroke(cr);
+        }
+    }
+    cairo_destroy(cr);
 
-	cr = cairo_create(window_surface);
-	cairo_status_t status;
-	status=cairo_status(cr);
-	if(status)
-		return FALSE;
-		
-	cairo_save(cr);
-	cairo_set_source_rgb(cr, 1, 1, 1);
-	cairo_paint(cr);
-	cairo_restore(cr);
-	
-	cairo_save(cr);
-	cairo_set_source_rgb(cr, 0.9, 0, 0);
-	cairo_rectangle(cr, 10, 10, 50, 80);
-	cairo_fill(cr);
-	cairo_restore(cr);
-	
-	cairo_save(cr);
-	cairo_set_source_rgb(cr, 0, .5, 0.2);
-	cairo_set_line_width (cr, 0.5);
-	cairo_set_antialias(cr, CAIRO_ANTIALIAS_SUBPIXEL);
-	cairo_move_to(cr, 0, 0);
-	cairo_line_to(cr, 110, 20);
-	cairo_stroke(cr);
-	cairo_restore(cr);
-	
-	
-	/*Transfer drawings to screen*/
 	cairo_gl_surface_swapbuffers (window_surface);
-	
-	cairo_destroy(cr);
+
 	rendering=FALSE;
+
+    return NULL;
+}
+
+
+gboolean timer_exe(GtkWidget * window){
 	
-	return TRUE;
+    static gboolean first_execution = TRUE;
+	
+    //use a safe function to get the value of currently_drawing so
+    //we don't run into the usual multithreading issues
+    gboolean drawing_status = g_atomic_int_get(&rendering);
+	
+    //if we are not currently drawing anything, launch a thread to
+    //update our pixmap
+    if(drawing_status == 0){
+        static pthread_t thread_info;
+        if(first_execution != TRUE){
+            pthread_join(thread_info, NULL);
+        }
+        pthread_create( &thread_info, NULL, do_draw, NULL);
+    }
+
+	first_execution = FALSE;
+	
+    return TRUE;
+	
 }
 
-void on_destroy()
-{
-	gtk_main_quit();
-}
 
-
-gboolean
-on_configure_event(GtkWidget *w, GdkEvent *event, gpointer data)
-{
-	gint x, y;
-	x = event->configure.width;
-	y = event->configure.height;
-	cairo_gl_surface_set_size(window_surface, x, y);
-	gtk_widget_queue_draw(w);
-	return TRUE;
-}
 
 int main (int argc, char *argv[])
 {
-	GtkWidget *window;
+
+    gdk_threads_init();
+    gdk_threads_enter();
+
 	
 	gtk_init(&argc, &argv);
+
+	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	
-	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 	
-	g_signal_connect(window, "expose-event",
-					 G_CALLBACK(on_expose_event), NULL);
-	g_signal_connect(window, "destroy",
-					 G_CALLBACK(on_destroy), NULL);
-	g_signal_connect(window, "configure-event",
-					 G_CALLBACK(on_configure_event), NULL);
-	
-	
-	//gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
 	gtk_window_set_title(GTK_WINDOW(window), "cairo_gl");
 	gtk_window_set_default_size(GTK_WINDOW(window), 400, 300);
 	gtk_widget_set_app_paintable(window, TRUE);
 	gtk_widget_set_double_buffered(window, FALSE);
+	
 	gtk_widget_show_all(window);
 	
 	window_surface=create_source_surface_for_widget(window);
 	
+	//(void)g_timeout_add(33, (GSourceFunc)timer_exe, window);
+	
+	do_draw(NULL);
+	
 	gtk_main();
 	
+	gdk_threads_leave();
 	return 0;
 }
