@@ -156,31 +156,30 @@ on_configure_event(GtkWidget *w, GdkEvent *event, gpointer data)
 
 int main (int argc, char *argv[])
 {
-
-  GtkWidget *window;
-
-  gtk_init(&argc, &argv);
-  
-  window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
- 
-  g_signal_connect(window, "expose-event",
-      G_CALLBACK(on_expose_event), NULL);
-  g_signal_connect(window, "destroy",
-      G_CALLBACK(on_destroy), NULL);
-  g_signal_connect(window, "configure-event",
-	  G_CALLBACK(on_configure_event), NULL);
-
-
-  gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-  gtk_window_set_title(GTK_WINDOW(window), "cairo_gl");
-  gtk_window_set_default_size(GTK_WINDOW(window), 400, 300); 
-  gtk_widget_set_app_paintable(window, TRUE);
-  gtk_widget_set_double_buffered(window, FALSE);
-  gtk_widget_show_all(window);
-
-  window_surface=create_source_surface_for_widget(window);
-
-  gtk_main();
-
-  return 0;
+	GtkWidget *window;
+	
+	gtk_init(&argc, &argv);
+	
+	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	
+	g_signal_connect(window, "expose-event",
+					 G_CALLBACK(on_expose_event), NULL);
+	g_signal_connect(window, "destroy",
+					 G_CALLBACK(on_destroy), NULL);
+	g_signal_connect(window, "configure-event",
+					 G_CALLBACK(on_configure_event), NULL);
+	
+	
+	//gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+	gtk_window_set_title(GTK_WINDOW(window), "cairo_gl");
+	gtk_window_set_default_size(GTK_WINDOW(window), 400, 300);
+	gtk_widget_set_app_paintable(window, TRUE);
+	gtk_widget_set_double_buffered(window, FALSE);
+	gtk_widget_show_all(window);
+	
+	window_surface=create_source_surface_for_widget(window);
+	
+	gtk_main();
+	
+	return 0;
 }
