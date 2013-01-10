@@ -9,7 +9,7 @@
 
 
 static gboolean rendering=FALSE;
-cairo_surface_t* window_surface=NULL;
+static cairo_surface_t* window_surface=NULL;
 
 struct closure {
     Display *dpy;
@@ -134,12 +134,11 @@ on_expose_event(GtkWidget *widget,
 	cairo_destroy(cr);
 	rendering=FALSE;
 	
-	return FALSE;
+	return TRUE;
 }
 
 void on_destroy()
 {
-	cairo_surface_destroy(window_surface);
 	gtk_main_quit();
 }
 
@@ -152,7 +151,7 @@ on_configure_event(GtkWidget *w, GdkEvent *event, gpointer data)
 	y = event->configure.height;
 	cairo_gl_surface_set_size(window_surface, x, y);
 	gtk_widget_queue_draw(w);
-	return FALSE;
+	return TRUE;
 }
 
 int main (int argc, char *argv[])
@@ -175,7 +174,7 @@ int main (int argc, char *argv[])
   gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
   gtk_window_set_title(GTK_WINDOW(window), "cairo_gl");
   gtk_window_set_default_size(GTK_WINDOW(window), 400, 300); 
-  //gtk_widget_set_app_paintable(window, TRUE);
+  gtk_widget_set_app_paintable(window, TRUE);
   gtk_widget_set_double_buffered(window, FALSE);
   gtk_widget_show_all(window);
 
