@@ -95,9 +95,13 @@ void *do_draw(void *ptr){
     cairo_t *cr = cairo_create(window_surface);
 	if(cairo_status(cr))
 		return NULL;
+		
+	Display *dpy =cairo_glx_device_get_display((cairo_surface_get_device(window_surface)));
 	
     //do some time-consuming drawing
-    static int i = 0;
+    XLockDisplay(dpy);
+	
+	static int i = 0;
     ++i; i = i % 300;   //give a little movement to our animation
     cairo_set_source_rgb (cr, .9, .2, .9);
     cairo_paint(cr);
@@ -113,7 +117,9 @@ void *do_draw(void *ptr){
     cairo_destroy(cr);
 
 	cairo_gl_surface_swapbuffers (window_surface);
-
+	
+	XUnlockDisplay(dpy);
+	
 	rendering=FALSE;
 
     return NULL;
@@ -148,8 +154,12 @@ gboolean timer_exe(GtkWidget * window){
 
 int main (int argc, char *argv[])
 {
+	if(!XInitThreads())
+		return 0;
 
     gdk_threads_init();
+
+
     gdk_threads_enter();
 
 	
@@ -168,9 +178,9 @@ int main (int argc, char *argv[])
 	
 	window_surface=create_source_surface_for_widget(window);
 	
-	//(void)g_timeout_add(33, (GSourceFunc)timer_exe, window);
+	(void)g_timeout_add(33, (GSourceFunc)timer_exe, window);
 	
-	do_draw(NULL);
+	//do_draw(NULL);
 	
 	gtk_main();
 	
