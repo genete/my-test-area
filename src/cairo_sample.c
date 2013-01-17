@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#define CAIRO_SAMPLE_USE_GL
+
 //the global pixmap that will serve as our buffer
 static GdkPixmap *pixmap = NULL;
 
@@ -139,18 +141,20 @@ void *do_draw(void *ptr){
     gdk_threads_leave();
 
     //create a gtk-independant surface to draw on
-
-    //cairo_surface_t *cst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
-
+#ifdef CAIRO_SAMPLE_USE_GL
     cairo_surface_t *cst = create_source_surface_for_size(width, height);
+#else
+    cairo_surface_t *cst = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+#endif
     if(cst==NULL) {
     	printf("surface is NULL\n");
     	return NULL;
     }
     cairo_t *cr = cairo_create(cst);
+#ifdef CAIRO_SAMPLE_USE_GL
     // set thread aware to FALSE to reduce context switch
     cairo_gl_device_set_thread_aware (cairo_surface_get_device (cst), FALSE);
-
+#endif
     //do some time-consuming drawing
     static int i = 0;
     ++i; i = i % 300;   //give a little movement to our animation
@@ -177,9 +181,10 @@ void *do_draw(void *ptr){
     cairo_paint(cr_pixmap);
     cairo_destroy(cr_pixmap);
 
+#ifdef CAIRO_SAMPLE_USE_GL
     // set thread aware to true to allow context switch before we exit
     cairo_gl_device_set_thread_aware (cairo_surface_get_device (cst), TRUE);
-
+#endif
     gdk_threads_leave();
 
     cairo_surface_destroy(cst);
